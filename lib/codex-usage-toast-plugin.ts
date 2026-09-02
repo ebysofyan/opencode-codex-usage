@@ -327,15 +327,29 @@ const windowLabelFromMinutes = (minutes: number | undefined, fallback: string): 
   return `${unitFormatter.minute.format(minutes)} window`;
 };
 
+const percentageFromText = (value: string): number | undefined => {
+  const normalized = value.trim();
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)%?$/.test(normalized)) return undefined;
+
+  const parsed = Number(normalized.replace(/%$/, ""));
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
 const usageText = (value: string): string => {
   const normalized = value.trim();
-  if (normalized === "-") return "-";
+  if (percentageFromText(normalized) === undefined) return "-";
   if (normalized.endsWith("%")) return normalized;
 
-  const asNumber = Number.parseFloat(normalized);
-  if (!Number.isFinite(asNumber)) return normalized;
-
   return `${normalized}%`;
+};
+
+const usageBar = (value: string, width = 10): string => {
+  const used = percentageFromText(value);
+  if (used === undefined) return "·".repeat(width);
+
+  const bounded = Math.max(0, Math.min(100, used));
+  const filled = Math.round((bounded / 100) * width);
+  return `${"█".repeat(filled)}${"░".repeat(width - filled)}`;
 };
 
 type ProbeDisplaySnapshot = Omit<ProbeSnapshot, "used" | "reset" | "windowMinutes"> & {
@@ -369,14 +383,18 @@ export const messageFromParsed = (parsed: ProbeDisplaySnapshot): string => {
       reset: resetWindowB,
     },
   ];
-  const compact = windows
-    .filter(
-      ({ minutes, used, reset }) =>
-        minutes !== undefined || Number.parseFloat(used) !== 0 || reset !== "0m",
-    )
-    .map(({ label, used, reset }) => `${label}: ${usageText(used)} used, reset ${reset}`)
-    .join(" | ");
-  return `⏳ ${compact}`;
+  const visibleWindows = windows.filter(
+    ({ minutes, used, reset }) =>
+      minutes !== undefined || Number.parseFloat(used) !== 0 || reset !== "0m",
+  );
+  const labelWidth = Math.max(...visibleWindows.map(({ label }) => label.length));
+
+  return visibleWindows
+    .map(({ label, used, reset }) => {
+      const usage = usageText(used);
+      return `${label.padEnd(labelWidth)}  ${usageBar(used)} ${usage.padStart(4)} used · resets ${reset}`;
+    })
+    .join("\n");
 };
 
 export const toastBodyFromParsed = (
