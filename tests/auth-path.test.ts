@@ -3,7 +3,8 @@ import path from "node:path";
 import { resolveAuthPath } from "#lib/auth-path.js";
 import { test } from "./test.ts";
 
-test("uses explicit OPENCODE_AUTH_PATH override", () => { const actual = resolveAuthPath({
+test("uses explicit OPENCODE_AUTH_PATH override", () => {
+  const actual = resolveAuthPath({
     platform: "win32",
     env: { OPENCODE_AUTH_PATH: "C:\\custom\\auth.json" },
     homeDir: "C:\\Users\\alice",
@@ -22,6 +23,15 @@ test("resolves Windows default from LOCALAPPDATA", () => {
   assert.equal(actual, path.join("C:\\Users\\alice\\AppData\\Local", "opencode", "auth.json"));
 });
 
+test("resolves macOS default from the XDG fallback", () => {
+  const actual = resolveAuthPath({
+    platform: "darwin",
+    env: {},
+    homeDir: "/Users/alice",
+  });
+
+  assert.equal(actual, "/Users/alice/.local/share/opencode/auth.json");
+});
 
 for (const platform of ["linux", "darwin"] as const) {
   test(`resolves ${platform} with XDG_DATA_HOME`, () => {
