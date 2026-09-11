@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { z } from "zod";
 import {
   CodexQuotaToastPlugin,
   isCommandExecutedEvent,
@@ -66,6 +67,39 @@ test("server plugin does not intercept codex usage session command", async () =>
   plugin.dispose?.();
 
   assert.equal(hasHook, false);
+});
+
+test("server plugin exposes current Codex quota to the agent", async (testContext) => {
+  const snapshot = {
+    status: "warn",
+    statusCode: 200,
+    plan: "plus",
+    profile: "default",
+    used: { primary: 81, secondary: 9 },
+    reset: { primary: "1h0m", secondary: "7d0h" },
+    windowMinutes: { primary: 300, secondary: 10080 },
+    probeTokens: 10,
+  };
+  const context = {
+    ...pluginContext(),
+    probeQuota: async () => snapshot,
+  };
+  const plugin = CodexQuotaToastPlugin(context);
+  testContext.after(() => plugin.dispose?.());
+  const AgentToolPluginSchema = z.object({
+    tool: z.object({
+      codex_usage: z.object({
+        execute: z.custom<(args: Record<string, never>) => Promise<string>>(
+          (value) => typeof value === "function",
+        ),
+      }),
+    }),
+  });
+
+  const parsedPlugin = AgentToolPluginSchema.parse(plugin);
+  const output = await parsedPlugin.tool.codex_usage.execute({});
+
+  assert.deepEqual(JSON.parse(output), snapshot);
 });
 
 test("matches file watcher namespace event types", () => {

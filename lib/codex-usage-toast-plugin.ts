@@ -201,6 +201,7 @@ type PluginEvent = {
 type PluginContext = {
   client: Client;
   worktree: string;
+  probeQuota?: typeof probeQuota;
 };
 
 type ProbeRunResult = {
@@ -449,7 +450,9 @@ export const resolveToastDurationMs = (
   return parsed.data;
 };
 
-export const CodexQuotaToastPlugin = ({ client, worktree }: PluginContext) => {
+export const CodexQuotaToastPlugin = (context: PluginContext) => {
+  const { client, worktree } = context;
+  const quotaProbe = context.probeQuota ?? probeQuota;
   const pollMs = resolvePollMs();
   const toastThreshold = resolveToastThreshold();
   const toastDurationMs = resolveToastDurationMs();
@@ -514,7 +517,7 @@ export const CodexQuotaToastPlugin = ({ client, worktree }: PluginContext) => {
     running = true;
 
     try {
-      const parsed = await probeQuota({ model: sessionModel });
+      const parsed = await quotaProbe({ model: sessionModel });
       const probeError = parsed.error?.trim();
       if (probeError) {
         await logPluginError("quota probe failed", { detail: probeError, worktree });
@@ -658,6 +661,16 @@ export const CodexQuotaToastPlugin = ({ client, worktree }: PluginContext) => {
   ensureBackgroundWorkersStarted();
 
   return {
+    tool: {
+      codex_usage: {
+        description:
+          "Get current Codex quota usage and reset times for the connected ChatGPT account. Use for Codex usage, ChatGPT Codex limits, remaining quota, or reset questions. Does not report OpenAI API billing or general ChatGPT message limits.",
+        args: {},
+        execute: async (): Promise<string> => {
+          return JSON.stringify(await quotaProbe({ model: sessionModel }));
+        },
+      },
+    },
     config: async (_input: {
       command?: Record<
         string,
