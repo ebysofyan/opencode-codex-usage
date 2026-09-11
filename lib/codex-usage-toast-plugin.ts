@@ -664,7 +664,7 @@ export const CodexQuotaToastPlugin = (context: PluginContext) => {
     tool: {
       codex_usage: {
         description:
-          "Get current Codex quota usage and reset times for the connected ChatGPT account. Use for Codex usage, ChatGPT Codex limits, remaining quota, or reset questions. Does not report OpenAI API billing or general ChatGPT message limits.",
+          "Get current Codex quota usage and reset times for the connected ChatGPT account. Use whenever the user asks about Codex usage, ChatGPT usage, remaining quota, limits, or reset times. Does not report OpenAI API billing or general ChatGPT message limits.",
         args: {},
         execute: async (): Promise<string> => {
           return JSON.stringify(await quotaProbe({ model: sessionModel }));

@@ -104,8 +104,9 @@ This means quota checks run locally and the command shows a toast without an ass
 
 The server plugin also registers a `codex_usage` tool. OpenCode can call it during an assistant
 turn when you ask questions such as "How much Codex usage do I have left?" or "When does my
-Codex quota reset?" The tool reports Codex quota for the connected ChatGPT plan; it does not
-report general ChatGPT message limits or OpenAI API billing.
+Codex quota reset?" Asking about "ChatGPT usage" also invokes the probe. The tool reports Codex
+quota for the connected ChatGPT plan; it does not report general ChatGPT message limits or
+OpenAI API billing.
 
 You can still run `opencode-codex-usage` directly when you want an immediate quota refresh from a shell.
 

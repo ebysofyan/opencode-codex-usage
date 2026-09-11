@@ -89,6 +89,7 @@ test("server plugin exposes current Codex quota to the agent", async (testContex
   const AgentToolPluginSchema = z.object({
     tool: z.object({
       codex_usage: z.object({
+        description: z.string(),
         execute: z.custom<(args: Record<string, never>) => Promise<string>>(
           (value) => typeof value === "function",
         ),
@@ -97,6 +98,7 @@ test("server plugin exposes current Codex quota to the agent", async (testContex
   });
 
   const parsedPlugin = AgentToolPluginSchema.parse(plugin);
+  assert.match(parsedPlugin.tool.codex_usage.description, /use whenever.*ChatGPT usage/i);
   const output = await parsedPlugin.tool.codex_usage.execute({});
 
   assert.deepEqual(JSON.parse(output), snapshot);
