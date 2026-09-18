@@ -1,7 +1,12 @@
 import { appendFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { probeQuota } from "./lib/codex-usage-probe.js";
+import {
+  isLegacyAuthFailure,
+  LEGACY_AUTH_UNSUPPORTED_MESSAGE,
+  probeQuota,
+  type ProbeSnapshot,
+} from "./lib/codex-usage-probe.js";
 import { resolveToastDurationMs, toastBodyFromParsed } from "./lib/codex-usage-toast-plugin.js";
 
 type TuiToast = {
@@ -46,6 +51,11 @@ const debugLog = (message: string, extra: Record<string, unknown> = {}): void =>
   void appendFile(debugLogPath, `${line}\n`, "utf8").catch(() => undefined);
 };
 
+export const messageForProbeFailure = (snapshot: ProbeSnapshot): string => {
+  if (isLegacyAuthFailure(snapshot)) return LEGACY_AUTH_UNSUPPORTED_MESSAGE;
+  return `🚨 Quota error | ${snapshot.error ?? "unknown probe error"}`;
+};
+
 export const CodexQuotaTuiPlugin = async (api: TuiApi): Promise<void> => {
   const toastDurationMs = resolveToastDurationMs();
   let running = false;
@@ -79,8 +89,8 @@ export const CodexQuotaTuiPlugin = async (api: TuiApi): Promise<void> => {
       if (probeError) {
         showToast({
           title: "Codex quota 🚨",
-          message: `🚨 Quota error | ${probeError}`,
-          variant: "error",
+          message: messageForProbeFailure(parsed),
+          variant: isLegacyAuthFailure(parsed) ? "warning" : "error",
           duration: toastDurationMs,
         });
         return;
