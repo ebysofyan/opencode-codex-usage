@@ -72,8 +72,7 @@ but quota retrieval currently requires a valid legacy OpenCode auth entry.
 Selecting an account through OpenCode2's multi-account credential store does not
 make that credential available to the quota probe. Full account-scoped support
 requires a safe core operation; see the
-[OpenCode2 API request](docs/opencode2-multi-account-api-request.md) and
-[multi-account design](docs/superpowers/specs/2026-09-18-opencode2-multi-account-design.md).
+[OpenCode2 API request](docs/opencode2-multi-account-api-request.md).
 
 ### Option C: local repo (development)
 
