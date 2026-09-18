@@ -67,13 +67,6 @@ registers `codex_usage`, forwards server events to the legacy background workers
 and disposes those workers when OpenCode exits. The `/codex-usage` command remains
 provided by the `tui` entrypoint.
 
-**Multi-account compatibility:** Slash-command registration works in OpenCode2,
-but quota retrieval currently requires a valid legacy OpenCode auth entry.
-Selecting an account through OpenCode2's multi-account credential store does not
-make that credential available to the quota probe. Full account-scoped support
-requires a safe core operation; see the
-[OpenCode2 API request](docs/opencode2-multi-account-api-request.md).
-
 ### Option C: local repo (development)
 
 1. Build:
