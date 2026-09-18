@@ -28,6 +28,7 @@
   "exports": {
     ".": "./dist/index.js",
     "./server": "./dist/index.js",
+    "./opencode2": "./dist/opencode2.js",
     "./tui": "./dist/tui.js"
   },
   "imports": {
@@ -40,6 +41,7 @@
   "files": [
     "dist/bin/**/*.js",
     "dist/index.js",
+    "dist/opencode2.js",
     "dist/tui.js",
     "dist/lib/**/*.js",
     "README.md"

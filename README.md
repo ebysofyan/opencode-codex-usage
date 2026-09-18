@@ -43,6 +43,30 @@ npx opencode-codex-usage --install
 
 Then restart OpenCode.
 
+### OpenCode 2 configuration
+
+OpenCode 2 uses a native server entrypoint and keeps the TUI plugin separate. After
+installing this package, add the server plugin to `~/.config/opencode2/opencode.jsonc`:
+
+```jsonc
+{
+  "plugin": ["opencode-codex-usage/opencode2"],
+}
+```
+
+Add the TUI entrypoint to `~/.config/opencode2/tui.json`:
+
+```json
+{
+  "plugin": ["opencode-codex-usage/tui"]
+}
+```
+
+Keep any existing plugin entries in both arrays. The `opencode2` server entrypoint
+registers `codex_usage`, forwards server events to the legacy background workers,
+and disposes those workers when OpenCode exits. The `/codex-usage` command remains
+provided by the `tui` entrypoint.
+
 ### Option C: local repo (development)
 
 1. Build:
