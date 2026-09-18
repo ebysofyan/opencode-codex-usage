@@ -71,7 +71,7 @@ test("probeQuota does not retry auth/http 401 failures", async () => {
 
   assert.equal(calls, 1);
   assert.equal(snapshot.status, "error");
-  assert.equal(snapshot.statusCode, 401);
+  assert.equal(snapshot.statusCode, "legacy-auth");
 });
 
 test("probeQuota uses supported default model for ChatGPT account auth", async () => {

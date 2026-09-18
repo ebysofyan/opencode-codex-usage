@@ -82,6 +82,12 @@ export type ProbeSnapshot = {
   error?: string;
 };
 
+export const LEGACY_AUTH_STATUS_CODE = "legacy-auth" as const;
+export const LEGACY_AUTH_UNSUPPORTED_MESSAGE =
+  "Codex usage is unavailable for OpenCode2 multi-account credentials; this integration currently requires a valid legacy OpenCode auth entry.";
+export const isLegacyAuthFailure = (snapshot: ProbeSnapshot): boolean =>
+  snapshot.statusCode === LEGACY_AUTH_STATUS_CODE;
+
 export type ProbeQuotaOptions = {
   retryCount?: number;
   timeoutMs?: number;
@@ -106,6 +112,15 @@ const toProbeError = (
   if (statusCode !== undefined) snapshot.statusCode = statusCode;
   return snapshot;
 };
+
+const toLegacyAuthError = (reauthenticate = false): ProbeSnapshot =>
+  toProbeError(
+    "error",
+    reauthenticate
+      ? `${LEGACY_AUTH_UNSUPPORTED_MESSAGE} Please sign in again or re-authenticate.`
+      : LEGACY_AUTH_UNSUPPORTED_MESSAGE,
+    LEGACY_AUTH_STATUS_CODE,
+  );
 
 const parseOptionalInt = (raw: string): number | null => {
   const parsed = Number.parseInt(raw, 10);
@@ -193,6 +208,7 @@ const resolveSupportedProbeModels = async (
   }
 
   if (!response.ok) {
+    if (response.status === 401) return toLegacyAuthError(true);
     const detail = parseProbeErrorDetail(responseText).slice(0, 240);
     return toProbeError("error", detail, response.status);
   }
@@ -236,11 +252,13 @@ const canonicalizeConfiguredProbeModel = async (
   access: string,
   accountId: string,
   fetchImpl: typeof fetch,
-): Promise<string> => {
+): Promise<string | ProbeSnapshot> => {
   if (!shouldCanonicalizeConfiguredModel(model)) return model;
 
   const supportedModels = await resolveSupportedProbeModels(access, accountId, fetchImpl);
-  if ("status" in supportedModels) return model;
+  if ("status" in supportedModels) {
+    return isLegacyAuthFailure(supportedModels) ? supportedModels : model;
+  }
 
   const sorted = [...supportedModels].sort((left, right) => right.length - left.length);
   return (
@@ -412,7 +430,7 @@ const loadCredentials = async (
   if (options.credentials) {
     const access = options.credentials.accessToken.trim();
     if (access === "") {
-      return toProbeError("error", "missing access token", "auth");
+      return toLegacyAuthError();
     }
     return { access, accountId: options.credentials.accountId ?? "" };
   }
@@ -428,11 +446,10 @@ const loadCredentials = async (
     accountId = auth.openai?.accountId ?? "";
 
     if (access.trim() === "") {
-      return toProbeError("error", "missing access token", "auth");
+      return toLegacyAuthError();
     }
-  } catch (error) {
-    const detail = errorMessage(error);
-    return toProbeError("error", detail.slice(0, 120), "auth");
+  } catch {
+    return toLegacyAuthError();
   }
 
   return { access, accountId };
@@ -487,6 +504,7 @@ const runProbeAttempt = async (
   }
 
   if (!response.ok) {
+    if (response.status === 401) return toLegacyAuthError(true);
     const detail = parseProbeErrorDetail(responseText).slice(0, 240);
     return toProbeError("error", detail, response.status);
   }
